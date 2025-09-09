@@ -18,66 +18,25 @@ A solução foi construída em três partes principais:
 
 - O script fica "ouvindo" um canal específico (o tópico MQTT).
 
-- Sempre que um novo dado da máquina chega, o script o pega e salva imediatamente no nosso banco de dados.
+- Sempre que um novo dado da máquina chega, o script o pega e salva imediatamente no banco de dados.
 
-### Parte 3: O Painel de Controle (Dashboard)
-- Criei um dashboard do zero no Grafana para visualizar os 6 indicadores pedidos.
+### Parte 3: Construção do Dashboard no Grafana
+- Criei um dashboard do zero no Grafana para visualizar os indicadores pedidos.
 
-- Conectei o Grafana ao nosso banco de dados.
+- Conectei o Grafana ao banco de dados.
+
+- Utilizei diferentes tipos de painéis para representar cada dado da melhor forma:
+  - Gauge e Stat para os KPIs principais (OEE, Performance), com cores que mudam de acordo com metas (Thresholds) para um feedback visual imediato.
+
+  - Pie Chart e Bar Gauge para mostrar a proporção entre peças boas e ruins.
+
+  - Time Series (Gráficos de Histórico), o ponto alto do dashboard, para mostrar a evolução da Performance, Disponibilidade e OEE ao longo do tempo. Isso permite uma análise de tendências, não apenas uma foto do momento atual.
 
 - Para cada indicador, escrevi um comando SQL que faz o cálculo necessário (soma de peças, cálculo de porcentagens, etc.).
 
-#### Total de Peças Produzidas:
-```
-SELECT SUM(pecas_boas) AS "Total de Peças Produzidas"
-FROM dados_maquina WHERE $__timeFilter(datahora)
-```
+- O dashboard final foi exportado como um arquivo .json e incluído no provisionamento do Grafana, garantindo que ele seja criado automaticamente sempre que o ambiente for iniciado.
 
-#### Total de Peças Defeituosas:
-
-```
-SELECT SUM(pecas_ruins) AS "Total de Peças Defeituosas"
-FROM dados_maquina WHERE $__timeFilter(datahora)
-```
-
-#### Qualidade:
-
-```
-SELECT (SUM(pecas_boas) * 100.0) / NULLIF(SUM(pecas_boas) + SUM(pecas_ruins), 0) AS "Qualidade"
-FROM dados_maquina WHERE $__timeFilter(datahora)
-```
-
-#### Disponibilidade:
-
-```
-SELECT (COUNT(CASE WHEN ligada THEN 1 END) * 100.0) / COUNT(*) AS "Disponibilidade"
-FROM dados_maquina WHERE $__timeFilter(datahora)
-```
-
-#### Performance:
-
-```
-SELECT (SUM(pecas_boas) / NULLIF((COUNT(CASE WHEN operacao THEN 1 END) * 100.0 / 12.0), 0)) * 100 AS "Performance"
-FROM dados_maquina WHERE $__timeFilter(datahora)
-```
-
-#### OEE:
-
-```
-WITH kpis AS (
-  SELECT
-    (COUNT(CASE WHEN ligada THEN 1 END) * 100.0) / COUNT(*) AS disponibilidade,
-    (SUM(pecas_boas) / NULLIF((COUNT(CASE WHEN operacao THEN 1 END) * 100.0 / 12.0), 0)) AS performance,
-    (SUM(pecas_boas) * 1.0) / NULLIF(SUM(pecas_boas) + SUM(pecas_ruins), 0) AS qualidade
-  FROM dados_maquina WHERE $__timeFilter(datahora)
-)
-SELECT disponibilidade * performance * qualidade AS "OEE"
-FROM kpis
-```
-
-- Ajustei o visual de cada indicador para mostrar os números e os símbolos de porcentagem (%) de forma clara.
-
-## 3. Comandos Utilizados
+## 3. Como Executar a Solução
 Estes foram os comandos usados no terminal para configurar e rodar o projeto.
 
 ### 1. Preparar o Ambiente:

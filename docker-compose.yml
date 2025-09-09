@@ -23,6 +23,8 @@ services:
     env_file: .env
     ports:
       - "3000:3000"
+    environment:
+          - GF_INSTALL_PLUGINS=grafana-clock-panel
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
